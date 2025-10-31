@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+langchain
+langchain-community
+langchain-huggingface
+transformers
+sentence-transformers
+chromadb
+torch
+safetensors
+python-multipart
+PyMuPDF
+pytesseract
+Pillow

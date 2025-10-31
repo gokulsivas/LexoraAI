@@ -9,7 +9,7 @@ from safetensors.torch import load_file
 
 # Load your fine-tuned Gemma generative model
 model_name = "google/gemma-3-1b-it"  # Base model from Hugging Face
-adapter_path = r"F:\GenAI\finetuned-gemma\adapter_model.safetensors"
+adapter_path = r"D:\GOKUL-UG\VIT\Projects\AI\GenAI\finetuned-gemma\adapter_model.safetensors"
 
 
 # Load tokenizer from Hugging Face
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         print(summarize_chunks(results))
 
         print("\nAnswer to your question:")
-        answer = answer_question("What is the process for resolving disputes?", results)
+        answer = answer_question("What is the contents of section 49A of Indian Law", results)
         print(answer)
     else:
         print("No relevant chunks found for the query.")
