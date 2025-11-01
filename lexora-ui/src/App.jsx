@@ -1,11 +1,15 @@
-import { useState } from 'react'
-import { Scale, Menu, X, Plus, MessageSquare, Trash2, Edit2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Scale, Menu, X, Plus, MessageSquare, Trash2, Edit2, LogOut } from 'lucide-react'
 import { Loader } from 'lucide-react'
 import QuerySection from './components/QuerySection'
 import AnswerDisplay from './components/AnswerDisplay'
+import { Landing } from './pages/Landing'
+import { SignUp } from './pages/SignUp'
+import { SignIn } from './pages/SignIn'
 import './App.css'
 
-export default function App() {
+function ChatApp() {
   const [chats, setChats] = useState([
     { id: Date.now(), title: 'New Chat', messages: [] }
   ])
@@ -14,6 +18,20 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [editingChat, setEditingChat] = useState(null)
   const [editTitle, setEditTitle] = useState('')
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      setUser(JSON.parse(userData))
+    }
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    window.location.href = '/'
+  }
 
   const getCurrentChat = () => chats.find(c => c.id === activeChat)
 
@@ -95,7 +113,7 @@ export default function App() {
       <aside
         className={`${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 transition-transform duration-300 fixed lg:relative w-64 lg:w-96 h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white p-6 border-r border-slate-700 overflow-y-auto z-40`}
+        } lg:translate-x-0 transition-transform duration-300 fixed lg:relative w-64 lg:w-96 h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white p-6 border-r border-slate-700 overflow-hidden z-40 flex flex-col`}
       >
         <div className="flex items-center gap-3 mb-8">
           <div className="bg-blue-500 p-2 rounded-lg">
@@ -115,7 +133,7 @@ export default function App() {
           New Chat
         </button>
 
-        <div className="space-y-2">
+        <div className="space-y-2 mb-6 flex-1 overflow-y-auto">
           {chats.map(chat => (
             <div
               key={chat.id}
@@ -175,6 +193,23 @@ export default function App() {
             </div>
           ))}
         </div>
+
+        {/* User Profile Section */}
+        <div className="border-t border-slate-700 pt-4 mt-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-bold text-sm">{user?.username?.charAt(0).toUpperCase() || 'U'}</span>
+            </div>
+            <span className="text-sm font-medium truncate">{user?.username || 'User'}</span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="p-2 hover:bg-red-600 rounded-lg transition"
+            title="Logout"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
       </aside>
 
       <main className="flex-1 flex flex-col overflow-hidden pt-16 lg:pt-0 bg-gray-950">
@@ -184,7 +219,7 @@ export default function App() {
               {currentChat?.messages.length === 0 && !loading ? (
                 <div className="text-center">
                   <Scale size={48} className="mx-auto mb-3 text-gray-500" />
-                  <p className="text-gray-400 text-lg">Start a conversation. Upload a document and ask questions.</p>
+                  <p className="text-gray-400 text-lg">Start a conversation. Ask legal questions.</p>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -229,5 +264,50 @@ export default function App() {
         />
       )}
     </div>
+  )
+}
+
+export default function App() {
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    const userData = localStorage.getItem('user')
+    
+    if (token && userData) {
+      setUser(JSON.parse(userData))
+    }
+    setLoading(false)
+  }, [])
+
+  // Listen for storage changes from other tabs
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const userData = localStorage.getItem('user')
+      const token = localStorage.getItem('token')
+      
+      if (token && userData) {
+        setUser(JSON.parse(userData))
+      } else {
+        setUser(null)
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
+
+  if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={user ? <Navigate to="/chat" /> : <Landing />} />
+        <Route path="/signup" element={user ? <Navigate to="/chat" /> : <SignUp />} />
+        <Route path="/signin" element={user ? <Navigate to="/chat" /> : <SignIn />} />
+        <Route path="/chat" element={user ? <ChatApp /> : <Navigate to="/signin" />} />
+      </Routes>
+    </Router>
   )
 }

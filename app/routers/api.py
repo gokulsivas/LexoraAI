@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
 import shutil
@@ -8,14 +8,34 @@ from app.core.chromadb_manager import chroma_db_manager
 import warnings
 import requests
 import json
-
+from app.routers import database
+import jwt
+import bcrypt
+from datetime import datetime, timedelta
+import os
+from sqlalchemy.orm import Session
 
 warnings.filterwarnings("ignore")
-
 
 router = APIRouter()
 lexora = LexoraAI()
 
+JWT_SECRET = os.getenv("JWT_SECRET", "your_secret_key_here")
+ALGORITHM = "HS256"
+
+# ============= AUTH MODELS =============
+
+class SignUpRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+    confirmPassword: str
+
+class SignInRequest(BaseModel):
+    email: str
+    password: str
+
+# ============= QUERY MODELS =============
 
 class QueryRequest(BaseModel):
     question: str
@@ -24,12 +44,84 @@ class QueryRequest(BaseModel):
     n_chunks: int = 5
     doc_type: Optional[str] = None
 
-
 class QueryResponse(BaseModel):
     answer: str
     using_documents: bool
     source_chunks: list
 
+# ============= AUTH ROUTES =============
+
+@router.post("/auth/signup")
+async def signup(data: SignUpRequest):
+    try:
+        if data.password != data.confirmPassword:
+            raise HTTPException(status_code=400, detail="Passwords do not match")
+        
+        if len(data.password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        
+        # For now, create a simple user dict (you can add DB later)
+        # Check if user exists (in production, check your database)
+        hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
+        
+        # Generate token
+        token = jwt.encode(
+            {
+                "id": 1,
+                "email": data.email,
+                "username": data.username,
+                "exp": datetime.utcnow() + timedelta(days=100)
+            },
+            JWT_SECRET,
+            algorithm=ALGORITHM
+        )
+        
+        return {
+            "message": "User created successfully",
+            "token": token,
+            "user": {"id": 1, "username": data.username, "email": data.email}
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/auth/signin")
+async def signin(data: SignInRequest):
+    try:
+        # For now, accept any valid email/password (you can add DB later)
+        # In production, verify against your database
+        
+        if not data.email or not data.password:
+            raise HTTPException(status_code=400, detail="Email and password required")
+        
+        # Generate token
+        token = jwt.encode(
+            {
+                "id": 1,
+                "email": data.email,
+                "username": data.email.split('@')[0],
+                "exp": datetime.utcnow() + timedelta(days=100)
+            },
+            JWT_SECRET,
+            algorithm=ALGORITHM
+        )
+        
+        return {
+            "message": "Sign in successful",
+            "token": token,
+            "user": {"id": 1, "username": data.email.split('@')[0], "email": data.email}
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============= EXISTING ROUTES =============
+
+router.include_router(database.router, prefix="/db", tags=["database"])
 
 def is_legal_question(question):
     """Check if the question is related to legal matters"""
@@ -56,8 +148,6 @@ def is_legal_question(question):
         return False
     
     return True
-
-
 
 @router.post("/upload-pdf")
 async def upload_pdf(file: UploadFile = File(...), doc_type: str = "general"):
@@ -99,7 +189,6 @@ async def upload_pdf(file: UploadFile = File(...), doc_type: str = "general"):
     except Exception as e:
         print(f"ERROR: {str(e)}")
         return {"status": "error", "message": str(e)}
-
 
 @router.post("/query", response_model=QueryResponse)
 async def query(request: QueryRequest):
@@ -145,7 +234,6 @@ async def query(request: QueryRequest):
             "source_chunks": []
         }
 
-
 @router.get("/documents/count")
 async def get_document_count(doc_type: Optional[str] = None):
     """Get count of stored document chunks"""
@@ -161,7 +249,6 @@ async def get_document_count(doc_type: Optional[str] = None):
         return {"total_chunks": count}
     except Exception as e:
         return {"total_chunks": 0, "error": str(e)}
-
 
 @router.post("/documents/clear")
 async def clear_documents(doc_type: Optional[str] = None):
@@ -182,7 +269,6 @@ async def clear_documents(doc_type: Optional[str] = None):
             return {"status": "success", "message": "All documents cleared"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
-
 
 @router.get("/documents/list")
 async def list_documents(limit: int = 50, doc_type: Optional[str] = None):
@@ -229,7 +315,6 @@ async def list_documents(limit: int = 50, doc_type: Optional[str] = None):
     except Exception as e:
         return {"error": str(e)}
 
-
 @router.get("/documents/types")
 async def list_document_types():
     """List all unique document types in collection"""
@@ -255,7 +340,6 @@ async def list_document_types():
     except Exception as e:
         print(f"ERROR in list_document_types: {e}")
         return {"error": str(e)}
-
 
 @router.post("/summarize")
 async def summarize_text(request: dict):
@@ -286,7 +370,6 @@ CRITICAL RULES:
 8. IMPORTANT: Do NOT include question numbers, reference codes, or citations like (Q653), (243ZE(2)(a)(i)), or (Article 243ZD) in your answer. 
 9. Provide only the direct answer with no brackets, parentheses containing codes, or reference numbers.
 10. Format: Clean, readable text without any [Qxxx] or (Article xxx) notations.
-
 
 Provide a clear, well-structured answer:"""
 
@@ -330,4 +413,3 @@ Provide a clear, well-structured answer:"""
     except Exception as e:
         print(f"   Ollama error: {e}")
         return {"summary": "Error processing request."}
-

@@ -2,16 +2,20 @@ import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { AlertCircle, Loader, Copy, Check, Scale } from 'lucide-react'
 
+
 export default function AnswerDisplay({ data, loading }) {
   const [copied, setCopied] = useState(false)
 
+
   const toggleSource = (idx) => {}
+
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(typeof text === 'string' ? text : JSON.stringify(text))
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
 
   if (loading) {
     return (
@@ -24,6 +28,7 @@ export default function AnswerDisplay({ data, loading }) {
     )
   }
 
+
   if (!data) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -35,7 +40,9 @@ export default function AnswerDisplay({ data, loading }) {
     )
   }
 
+
   const answer = data?.answer || data?.simplified_answer || data?.message || JSON.stringify(data)
+
 
   if (!answer) {
     return (
@@ -51,8 +58,9 @@ export default function AnswerDisplay({ data, loading }) {
     )
   }
 
+
   return (
-    <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl backdrop-blur-sm hover:border-slate-600 transition">
+    <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl backdrop-blur-sm hover:border-slate-600 transition w-full min-h-64">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-blue-600 bg-opacity-20 flex items-center justify-center">
@@ -75,6 +83,7 @@ export default function AnswerDisplay({ data, loading }) {
           )}
         </button>
       </div>
+
 
       <div className="prose prose-invert max-w-none text-white leading-relaxed">
         <ReactMarkdown
