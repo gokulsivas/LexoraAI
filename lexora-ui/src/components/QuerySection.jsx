@@ -2,12 +2,12 @@ import { useState, useRef } from 'react'
 import axios from 'axios'
 import { Send, Sliders, Loader, Upload } from 'lucide-react'
 
-
 export default function QuerySection({ onResults, onQueryStart }) {
   const [question, setQuestion] = useState('')
   const [nChunks, setNChunks] = useState(5)
   const [loading, setLoading] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef(null)
 
   const handleQuery = async () => {
@@ -39,22 +39,35 @@ export default function QuerySection({ onResults, onQueryStart }) {
     }
   }
 
-
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('doc_type', 'ipc')
+    if (!file) return
 
-      axios.post('http://localhost:8000/api/upload-pdf', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120000
-      }).then(() => {
-        alert('Document uploaded successfully')
-      }).catch((err) => {
-        alert(`Upload failed: ${err.message}`)
-      })
+    if (!file.name.endsWith('.pdf')) {
+      alert('Only PDF files allowed')
+      return
+    }
+
+    setUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await axios.post(
+        'http://localhost:8000/api/upload-pdf',
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 60000
+        }
+      )
+      alert('Document uploaded successfully')
+      fileInputRef.current.value = ''
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert(`Upload failed: ${error.response?.data?.message || error.message}`)
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -107,19 +120,19 @@ export default function QuerySection({ onResults, onQueryStart }) {
 
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex-shrink-0 w-14 h-14 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition text-gray-400 hover:text-white disabled:opacity-50"
-          title="Upload document"
-          disabled={loading}
+          disabled={uploading || loading}
+          className="flex-shrink-0 w-14 h-14 rounded-full bg-gray-700 hover:bg-gray-600 disabled:bg-gray-600 flex items-center justify-center transition text-gray-400 hover:text-white disabled:opacity-50"
+          title="Upload PDF document"
         >
           <Upload size={28} strokeWidth={1.5} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
         </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf"
-          onChange={handleFileUpload}
-          className="hidden"
-        />
 
         <button
           onClick={handleQuery}

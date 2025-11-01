@@ -283,6 +283,10 @@ CRITICAL RULES:
 5. Be concise but comprehensive
 6. Do NOT infer or use general knowledge
 7. Do NOT mention political names unless explicitly in text
+8. IMPORTANT: Do NOT include question numbers, reference codes, or citations like (Q653), (243ZE(2)(a)(i)), or (Article 243ZD) in your answer. 
+9. Provide only the direct answer with no brackets, parentheses containing codes, or reference numbers.
+10. Format: Clean, readable text without any [Qxxx] or (Article xxx) notations.
+
 
 Provide a clear, well-structured answer:"""
 
