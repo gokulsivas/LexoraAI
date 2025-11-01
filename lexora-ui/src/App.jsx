@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Scale, Menu, X, Plus, MessageSquare, Trash2, Edit2, LogOut } from 'lucide-react'
 import { Loader } from 'lucide-react'
@@ -19,6 +19,7 @@ function ChatApp() {
   const [editingChat, setEditingChat] = useState(null)
   const [editTitle, setEditTitle] = useState('')
   const [user, setUser] = useState(null)
+  const messagesEndRef = useRef(null)
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
@@ -27,13 +28,22 @@ function ChatApp() {
     }
   }, [])
 
+  const getCurrentChat = () => chats.find(c => c.id === activeChat)
+  const currentChat = getCurrentChat()
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [currentChat?.messages, loading])
+
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     window.location.href = '/'
   }
-
-  const getCurrentChat = () => chats.find(c => c.id === activeChat)
 
   const handleResults = (data) => {
     if (data) {
@@ -98,8 +108,6 @@ function ChatApp() {
     setEditingChat(null)
     setEditTitle('')
   }
-
-  const currentChat = getCurrentChat()
 
   return (
     <div className="flex flex-col lg:flex-row h-screen bg-white">
@@ -232,6 +240,7 @@ function ChatApp() {
                       )}
                     </div>
                   ))}
+                  <div ref={messagesEndRef} />
                 </div>
               )}
               
@@ -281,7 +290,6 @@ export default function App() {
     setLoading(false)
   }, [])
 
-  // Listen for storage changes from other tabs
   useEffect(() => {
     const handleStorageChange = () => {
       const userData = localStorage.getItem('user')
