@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Override root dark theme for inputs/textareas */
+textarea,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+select {
+  background-color: white !important;
+  color: #1f2937 !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+textarea,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="search"] {
+  font-family: inherit;
+}
+
+textarea::placeholder,
+input::placeholder {
+  color: #9ca3af;
+}
+
+textarea:focus,
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+}
+
+select option {
+  color: #1f2937;
+  background-color: white;
+}
+
+/* File input styling */
+input[type="file"] {
+  color: #666;
+}
+
+/* Markdown styling */
+.prose {
+  max-width: none;
+  color: #1f2937;
+}
+
+.prose p {
+  margin-bottom: 1em;
+  line-height: 1.7;
+}
+
+.prose strong {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
+.prose h1 {
+  font-size: 1.875em;
+}
+
+.prose h2 {
+  font-size: 1.5em;
+}
+
+.prose h3 {
+  font-size: 1.25em;
+}
+
+.prose ul,
+.prose ol {
+  margin-left: 1.5em;
+  margin-bottom: 1em;
+}
+
+.prose li {
+  margin-bottom: 0.5em;
+}
+
+.prose a {
+  color: #667eea;
+  text-decoration: underline;
+}
+
+.prose a:hover {
+  color: #1e3a5f;
+}
+
+.prose code {
+  background-color: #f5f7fa;
+  color: #667eea;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.prose blockquote {
+  border-left: 4px solid #667eea;
+  padding-left: 1em;
+  margin-left: 0;
+  color: #6b7280;
+}
+
+/* Card styling */
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Button variants */
+.btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 text-gray-800 hover:bg-gray-300 px-4 py-2 rounded-lg font-medium transition;
+}
+
+.btn-success {
+  @apply bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-lg font-medium transition;
+}
