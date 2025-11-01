@@ -9,7 +9,9 @@ import warnings
 import requests
 import json
 
+
 warnings.filterwarnings("ignore")
+
 
 router = APIRouter()
 lexora = LexoraAI()
@@ -20,13 +22,41 @@ class QueryRequest(BaseModel):
     max_new_tokens: int = 256
     temperature: float = 0.7
     n_chunks: int = 5
-    doc_type: Optional[str] = None  # ✅ FIXED: Optional, not required
+    doc_type: Optional[str] = None
 
 
 class QueryResponse(BaseModel):
     answer: str
     using_documents: bool
     source_chunks: list
+
+
+def is_legal_question(question):
+    """Check if the question is related to legal matters"""
+    legal_keywords = [
+        'law', 'legal', 'court', 'judge', 'crime', 'punishment', 'section',
+        'ipc', 'article', 'constitution', 'act', 'offense', 'trial', 'advocate',
+        'bail', 'case', 'petition', 'clause', 'statute', 'regulation', 'contract',
+        'offence', 'accused', 'guilty', 'innocent', 'criminal', 'civil', 'rights',
+        'liability', 'procedure', 'evidence', 'jurisdiction'
+    ]
+    
+    question_lower = question.lower().strip()
+    
+    casual_patterns = ['hello', 'hi ', 'hey', 'how are you', 'who are you', 
+                      'what is your name', 'thanks', 'ok', 'bye', 'good morning',
+                      'good afternoon', 'good evening', 'what\'s up', 'wassup',
+                      'lol', 'haha', 'test', 'testing']
+    
+    for pattern in casual_patterns:
+        if pattern == question_lower or question_lower == pattern:
+            return False
+    
+    if len(question_lower) < 3:
+        return False
+    
+    return True
+
 
 
 @router.post("/upload-pdf")
@@ -36,7 +66,7 @@ async def upload_pdf(file: UploadFile = File(...), doc_type: str = "general"):
         raise HTTPException(status_code=400, detail="Only PDF files allowed")
     
     try:
-        print(f"\n🔍 UPLOAD DEBUG:")
+        print(f"UPLOAD DEBUG:")
         print(f"   Received doc_type parameter: '{doc_type}'")
         print(f"   File: {file.filename}")
         
@@ -63,11 +93,11 @@ async def upload_pdf(file: UploadFile = File(...), doc_type: str = "general"):
             "chunks_stored": chunks_count
         }
         
-        print(f"   Response: {response}\n")
+        print(f"   Response: {response}")
         return response
         
     except Exception as e:
-        print(f"❌ ERROR: {str(e)}\n")
+        print(f"ERROR: {str(e)}")
         return {"status": "error", "message": str(e)}
 
 
@@ -75,11 +105,18 @@ async def upload_pdf(file: UploadFile = File(...), doc_type: str = "general"):
 async def query(request: QueryRequest):
     """Query the model - searches ALL documents"""
     try:
-        print(f"\n🔍 QUERY REQUEST:")
+        print(f"QUERY REQUEST:")
         print(f"   Question: {request.question}")
         print(f"   N Chunks: {request.n_chunks}")
         
-        # ✅ ALWAYS search all documents (doc_type = None)
+        if not is_legal_question(request.question):
+            print(f"   Not a legal question - returning friendly message")
+            return {
+                "answer": "Hello, I'm LexoraAI, a legal document assistant. I answer questions related to legal documents and laws. Please upload a legal document and ask legal-related questions to get accurate answers.",
+                "using_documents": False,
+                "source_chunks": []
+            }
+        
         response = lexora.query(
             question=request.question,
             doc_type=None,
@@ -88,9 +125,8 @@ async def query(request: QueryRequest):
         
         print(f"   Documents found: {response.get('using_documents')}")
         
-        # If documents found, summarize them
         if response.get('using_documents') and response.get('answer'):
-            print(f"   🔄 Calling Ollama to summarize...")
+            print(f"   Calling Ollama to summarize...")
             
             summary_response = await summarize_text({
                 "text": response.get('answer', ''),
@@ -98,11 +134,11 @@ async def query(request: QueryRequest):
             })
             
             response['answer'] = summary_response.get('summary', response.get('answer'))
-            print(f"   ✅ Answer summarized!")
+            print(f"   Answer summarized!")
         
         return response
     except Exception as e:
-        print(f"❌ Query error: {e}")
+        print(f"Query error: {e}")
         return {
             "answer": f"Error: {str(e)}",
             "using_documents": False,
@@ -200,7 +236,7 @@ async def list_document_types():
     try:
         collection = chroma_db_manager.get_collection()
         
-        print(f"\n--- list_document_types called ---")
+        print(f"list_document_types called")
         print(f"  Total docs in collection: {collection.count()}")
         
         all_docs = collection.get(include=["metadatas"])
@@ -211,7 +247,6 @@ async def list_document_types():
             doc_types.add(doc_type)
         
         print(f"  Final doc_types: {doc_types}")
-        print(f"--- end list_document_types ---\n")
         
         return {
             "document_types": list(doc_types),
@@ -233,7 +268,7 @@ async def summarize_text(request: dict):
     
     raw_text = raw_text[:3000]
     
-    prompt = f"""You are a strict legal document analyzer. Do NOT make up information.
+    prompt = f"""You are a legal document analyzer. Answer ONLY based on the legal text provided.
 
 User Question: "{question}"
 
@@ -241,17 +276,18 @@ Legal Text:
 {raw_text}
 
 CRITICAL RULES:
-1. ONLY use information explicitly stated in the legal text above
-2. If the question cannot be answered from the text, respond EXACTLY with: "This information is not available in the provided documents."
-3. Do NOT use general knowledge, do NOT infer, do NOT guess
-4. Do NOT mention government ministers, cabinet positions, or political offices unless explicitly in the text
-5. Be concise and direct
-6. Use only facts from the text provided
+1. Use ONLY information from the legal text above
+2. Provide clear, structured answers with numbered points when applicable
+3. Include relevant sections and articles
+4. If information is not in the text, say: "This information is not available in the provided documents."
+5. Be concise but comprehensive
+6. Do NOT infer or use general knowledge
+7. Do NOT mention political names unless explicitly in text
 
-Answer the question now. If it's not in the text, say so:"""
+Provide a clear, well-structured answer:"""
 
     try:
-        print(f"\n🔄 SUMMARIZE DEBUG:")
+        print(f"SUMMARIZE DEBUG:")
         print(f"   Question: {question}")
         print(f"   Raw text length: {len(raw_text)}")
         print(f"   Calling Ollama...")
@@ -262,7 +298,9 @@ Answer the question now. If it's not in the text, say so:"""
                 'model': 'mistral',
                 'prompt': prompt,
                 'stream': False,
-                'temperature': 0.1  # ← LOWER temperature = less hallucination
+                'temperature': 0.2,
+                'top_k': 40,
+                'top_p': 0.9
             },
             timeout=60
         )
@@ -271,20 +309,21 @@ Answer the question now. If it's not in the text, say so:"""
             result = response.json()
             summary = result.get('response', '').strip()
             
-            print(f"   ✅ Ollama returned {len(summary)} chars")
+            print(f"   Ollama returned {len(summary)} chars")
             
             if not summary or "Error" in summary:
-                print(f"   ⚠️ Ollama returned empty/error")
+                print(f"   Ollama returned empty/error")
                 return {"summary": "Unable to process your question."}
             
             return {"summary": summary}
         else:
-            print(f"   ❌ Ollama HTTP Error: {response.status_code}")
+            print(f"   Ollama HTTP Error: {response.status_code}")
             return {"summary": "Error processing request."}
             
     except requests.exceptions.Timeout:
-        print(f"   ❌ Ollama TIMEOUT")
+        print(f"   Ollama TIMEOUT")
         return {"summary": "Request timed out. Please try again."}
     except Exception as e:
-        print(f"   ❌ Ollama error: {e}")
+        print(f"   Ollama error: {e}")
         return {"summary": "Error processing request."}
+

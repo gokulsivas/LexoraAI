@@ -1,20 +1,27 @@
 import { useState } from 'react'
 import { Scale, Menu, X } from 'lucide-react'
+import { Loader } from 'lucide-react'
 import QuerySection from './components/QuerySection'
 import AnswerDisplay from './components/AnswerDisplay'
 import './App.css'
 
 export default function App() {
-  const [results, setResults] = useState(null)
+  const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleResults = (data) => {
-    setResults(data)
+    if (data) {
+      setMessages((prev) => [...prev, {
+        id: Date.now(),
+        type: 'answer',
+        data: data
+      }])
+    }
     setLoading(false)
   }
 
-  const handleQueryStart = () => {
+  const handleQueryStart = (question) => {
     setLoading(true)
   }
 
@@ -45,13 +52,40 @@ export default function App() {
 
       <main className="flex-1 flex flex-col overflow-hidden pt-16 lg:pt-0 bg-gray-950">
         <div className="flex-1 overflow-y-auto p-6 flex flex-col">
-          <div className="flex-1 max-w-4xl mx-auto w-full">
-            <AnswerDisplay data={results} loading={loading} />
+          <div className="flex justify-center w-full">
+            <div style={{ width: '95%', maxWidth: '1200px' }} className="space-y-6">
+              {messages.length === 0 ? (
+                <div className="flex justify-center items-center h-full">
+                  <div className="text-center">
+                    <Scale size={48} className="mx-auto mb-3 text-gray-500" />
+                    <p className="text-gray-400 text-lg">Start a conversation. Upload a document and ask questions.</p>
+                  </div>
+                </div>
+              ) : (
+                messages.map((msg) => (
+                  <div key={msg.id}>
+                    {msg.type === 'answer' && (
+                      <div className="flex justify-start">
+                        <AnswerDisplay data={msg.data} loading={false} />
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+              {loading && (
+                <div className="flex justify-center items-center py-8">
+                  <div className="text-center">
+                    <Loader size={32} className="animate-spin mx-auto mb-3 text-blue-600" />
+                    <p className="text-gray-400 text-sm">Searching for answer...</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="bg-gray-950 p-6 pb-8 flex justify-center">
-          <div style={{ width: '90%', maxWidth: '900px' }} className="bg-gray-800 rounded-2xl p-4 shadow-2xl border border-gray-700">
+          <div style={{ width: '90%', maxWidth: '900px' }}>
             <QuerySection
               onResults={handleResults}
               onQueryStart={handleQueryStart}

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import axios from 'axios'
 import { Send, Sliders, Loader, Upload } from 'lucide-react'
 
+
 export default function QuerySection({ onResults, onQueryStart }) {
   const [question, setQuestion] = useState('')
   const [nChunks, setNChunks] = useState(5)
@@ -12,30 +13,32 @@ export default function QuerySection({ onResults, onQueryStart }) {
   const handleQuery = async () => {
     if (!question.trim()) return
 
+    const currentQuestion = question.trim()
+    setQuestion('')
     setLoading(true)
-    if (onQueryStart) onQueryStart()
+    onQueryStart(currentQuestion)
 
     try {
       const response = await axios.post(
         'http://localhost:8000/api/query',
         {
-          question: question.trim(),
+          question: currentQuestion,
           doc_type: null,
           n_chunks: nChunks
         },
         { timeout: 120000 }
       )
 
-      console.log('Backend response:', response.data)
+      console.log('Backend response received:', response.data)
+      setLoading(false)
       onResults(response.data)
-      setQuestion('')
     } catch (error) {
       console.error('Query error:', error)
       alert(`Error: ${error.response?.data?.message || error.message}`)
+      setLoading(false)
     }
-
-    setLoading(false)
   }
+
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0]
@@ -81,11 +84,12 @@ export default function QuerySection({ onResults, onQueryStart }) {
         </div>
       )}
 
-      <div className="flex items-center gap-3 bg-gray-800 rounded-xl p-2">
+      <div className="flex items-center gap-2 bg-gray-800 rounded-full p-1">
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
           className="flex-shrink-0 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition text-white"
           title="Settings"
+          disabled={loading}
         >
           <Sliders size={28} strokeWidth={1.5} />
         </button>
@@ -96,15 +100,16 @@ export default function QuerySection({ onResults, onQueryStart }) {
           onKeyPress={handleKeyPress}
           disabled={loading}
           placeholder="Ask your question..."
-          className="flex-1 bg-white border-none rounded-lg p-3 resize-none outline-none text-gray-900 placeholder-gray-500 font-medium max-h-24"
+          className="flex-1 bg-white border-none rounded-full px-4 py-2 resize-none outline-none text-gray-900 placeholder-gray-500 font-medium max-h-24"
           rows="1"
-          style={{ minHeight: '48px' }}
+          style={{ minHeight: '50px' }}
         />
 
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex-shrink-0 w-14 h-14 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition text-gray-400 hover:text-white"
+          className="flex-shrink-0 w-14 h-14 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition text-gray-400 hover:text-white disabled:opacity-50"
           title="Upload document"
+          disabled={loading}
         >
           <Upload size={28} strokeWidth={1.5} />
         </button>
@@ -119,7 +124,7 @@ export default function QuerySection({ onResults, onQueryStart }) {
         <button
           onClick={handleQuery}
           disabled={loading || !question.trim()}
-          className="flex-shrink-0 w-14 h-14 rounded-full bg-gray-700 hover:bg-gray-600 disabled:bg-gray-700 disabled:cursor-not-allowed flex items-center justify-center transition text-gray-400 hover:text-white"
+          className="flex-shrink-0 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center transition text-white"
           title="Send message"
         >
           {loading ? (
