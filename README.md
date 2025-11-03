@@ -31,8 +31,8 @@ LexoraAI is a privacy-focused, local AI chatbot for querying legal documents usi
 
 ## Running the Project
 - Backend: `uvicorn main:app --reload --port 8000` (from root).
-- Frontend: `cd frontend && npm start` (runs on localhost:3000).
-- Access: Open http://localhost:3000, sign up/login, upload docs, and chat.
+- Frontend: `cd frontend && npm start` (runs on localhost:5173).
+- Access: Open http://localhost:5173, sign up/login, upload docs, and chat.
 - No env vars required, but ensure Ollama port is free.
 
 ## Usage
@@ -46,4 +46,4 @@ LexoraAI is a privacy-focused, local AI chatbot for querying legal documents usi
 - `/frontend/src`: React components (App.jsx, Chat.jsx, Auth.jsx).
 - `/uploads`: Stored documents.
 - `requirements.txt`: Python deps.
-- `package.json`: NPM deps.[1][5]
+- `package.json`: NPM deps.
