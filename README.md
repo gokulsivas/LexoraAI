@@ -159,10 +159,16 @@ Then open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## Usage
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/ef3ba37d-672f-4a66-b2b9-5fadccf74a3b" height="380" style="object-fit: contain;"/>
-  <img src="https://github.com/user-attachments/assets/21cbc525-d81e-43bb-95a5-4ba82c470ddb" height="380" style="object-fit: contain;"/>
-</div>
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/ef3ba37d-672f-4a66-b2b9-5fadccf74a3b" height="350"/>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/21cbc525-d81e-43bb-95a5-4ba82c470ddb" height="350"/>
+    </td>
+  </tr>
+</table>
 
 1. **Sign up or log in** using the auth form.
 2. **Upload a PDF** - e.g., a legal judgment, contract, or notice.
